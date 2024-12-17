@@ -11,17 +11,22 @@ from datetime import datetime
 
 app = FastAPI()
 
-# 配置模板和静态文件
+# 配置模板
 templates = Jinja2Templates(directory="templates")
-# 挂载 downloads 目录为静态文件目录
-app.mount("/downloads", StaticFiles(directory="downloads"), name="downloads")
 
 # 视频保存目录
-DOWNLOAD_DIR = Path("downloads")
+DOWNLOAD_DIR = Path("/tmp/downloads")
 DOWNLOAD_DIR.mkdir(exist_ok=True)
+
+# 为了在 Vercel 上工作，我们需要将下载目录挂载为静态目录
+app.mount("/downloads", StaticFiles(directory="/tmp/downloads"), name="downloads")
 
 # 存储下载任务状态
 download_tasks = {}
+
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok"}
 
 def get_video_info(url):
     """获取视频信息"""
@@ -81,10 +86,8 @@ async def home(request: Request):
         {"request": request, "videos": videos}
     )
 
-from fastapi import Body
-
 @app.post("/download")
-async def download(url: str = Body(..., embed=True)):
+async def download(url: str):
     """开始下载视频"""
     video_id = str(len(download_tasks))
     info = get_video_info(url)
