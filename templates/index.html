@@ -70,91 +70,92 @@
         </div>
     </div>
 
-    async function downloadVideo() {
-        const urlInput = document.getElementById('url-input');
-        const downloadStatus = document.getElementById('download-status');
-        const statusText = document.getElementById('status-text');
-        const progressBar = document.getElementById('progress-bar');
-        const videoInfo = document.getElementById('video-info');
-        
-        downloadStatus.classList.remove('hidden');
-        statusText.textContent = 'Starting download...';
-        
-        try {
-            if (!urlInput.value) {
-                throw new Error('Please enter a YouTube URL');
-            }
-    
-            console.log('Sending request with URL:', urlInput.value);
+    <script>
+        async function downloadVideo() {
+            const urlInput = document.getElementById('url-input');
+            const downloadStatus = document.getElementById('download-status');
+            const statusText = document.getElementById('status-text');
+            const progressBar = document.getElementById('progress-bar');
+            const videoInfo = document.getElementById('video-info');
             
-            const response = await fetch('/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: urlInput.value })
-            });
+            downloadStatus.classList.remove('hidden');
+            statusText.textContent = 'Starting download...';
             
-            console.log('Response status:', response.status);
-            const data = await response.json();
-            console.log('Received data:', data);
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
-            if (!data.info) {
-                console.error('Missing info in response:', data);
-                throw new Error('Invalid server response: missing video info');
-            }
-            
-            // 显示视频信息
-            const info = data.info;
-            console.log('Video info:', info);
-            
-            document.getElementById('video-title').textContent = info.title || 'Unknown Title';
-            document.getElementById('video-author').textContent = `By: ${info.author || 'Unknown Author'}`;
-            document.getElementById('video-duration').textContent = `Duration: ${info.duration || '0:00'}`;
-            document.getElementById('video-description').textContent = info.description || '';
-            videoInfo.classList.remove('hidden');
-            
-            // 轮询下载状态
-            const videoId = data.video_id;
-            if (!videoId) {
-                throw new Error('Missing video ID in response');
-            }
-            
-            const checkStatus = async () => {
-                try {
-                    const statusResponse = await fetch(`/status/${videoId}`);
-                    const statusData = await statusResponse.json();
-                    console.log('Status update:', statusData);
-                    
-                    progressBar.style.width = `${statusData.progress || 0}%`;
-                    statusText.textContent = `Downloading: ${statusData.progress || 0}%`;
-                    
-                    if (statusData.status === 'completed') {
-                        statusText.textContent = 'Download completed!';
-                        setTimeout(() => location.reload(), 1000);
-                    } else if (statusData.status === 'error') {
-                        statusText.textContent = `Error: ${statusData.error || 'Unknown error'}`;
-                    } else {
-                        setTimeout(checkStatus, 1000);
-                    }
-                } catch (error) {
-                    console.error('Status check error:', error);
-                    statusText.textContent = `Error checking status: ${error.message}`;
+            try {
+                if (!urlInput.value) {
+                    throw new Error('Please enter a YouTube URL');
                 }
-            };
-            
-            checkStatus();
-            
-        } catch (error) {
-            console.error('Download error:', error);
-            statusText.textContent = `Error: ${error.message}`;
-            videoInfo.classList.add('hidden');
+    
+                console.log('Sending request with URL:', urlInput.value);
+                
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: urlInput.value })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Received data:', data);
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.info) {
+                    console.error('Missing info in response:', data);
+                    throw new Error('Invalid server response: missing video info');
+                }
+                
+                // 显示视频信息
+                const info = data.info;
+                console.log('Video info:', info);
+                
+                document.getElementById('video-title').textContent = info.title || 'Unknown Title';
+                document.getElementById('video-author').textContent = `By: ${info.author || 'Unknown Author'}`;
+                document.getElementById('video-duration').textContent = `Duration: ${info.duration || '0:00'}`;
+                document.getElementById('video-description').textContent = info.description || '';
+                videoInfo.classList.remove('hidden');
+                
+                // 轮询下载状态
+                const videoId = data.video_id;
+                if (!videoId) {
+                    throw new Error('Missing video ID in response');
+                }
+                
+                const checkStatus = async () => {
+                    try {
+                        const statusResponse = await fetch(`/api/status/${videoId}`);
+                        const statusData = await statusResponse.json();
+                        console.log('Status update:', statusData);
+                        
+                        progressBar.style.width = `${statusData.progress || 0}%`;
+                        statusText.textContent = `Downloading: ${statusData.progress || 0}%`;
+                        
+                        if (statusData.status === 'completed') {
+                            statusText.textContent = 'Download completed!';
+                            setTimeout(() => location.reload(), 1000);
+                        } else if (statusData.status === 'error') {
+                            statusText.textContent = `Error: ${statusData.error || 'Unknown error'}`;
+                        } else {
+                            setTimeout(checkStatus, 1000);
+                        }
+                    } catch (error) {
+                        console.error('Status check error:', error);
+                        statusText.textContent = `Error checking status: ${error.message}`;
+                    }
+                };
+                
+                checkStatus();
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                statusText.textContent = `Error: ${error.message}`;
+                videoInfo.classList.add('hidden');
+            }
         }
-    }
     </script>
 </body>
 </html>
