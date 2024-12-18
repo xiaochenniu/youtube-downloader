@@ -30,15 +30,21 @@ async def health_check():
 
 def get_video_info(url):
     """获取视频信息"""
-    with yt_dlp.YoutubeDL() as ydl:
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,
+        'no_check_certificates': True
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(url, download=False)
             return {
                 "title": info["title"],
-                "duration": str(int(info["duration"] // 60)) + ":" + str(int(info["duration"] % 60)),
-                "author": info["uploader"],
-                "description": info["description"][:200] + "...",
-                "thumbnail": info["thumbnail"],
+                "duration": str(int(info.get("duration", 0) // 60)) + ":" + str(int(info.get("duration", 0) % 60)),
+                "author": info.get("uploader", "Unknown"),
+                "description": info.get("description", "")[:200] + "...",
+                "thumbnail": info.get("thumbnail", ""),
             }
         except Exception as e:
             return {"error": str(e)}
@@ -52,9 +58,12 @@ async def download_video(url, video_id):
             download_tasks[video_id]["progress"] = int(d.get('downloaded_bytes', 0) / d.get('total_bytes', 1) * 100)
     
     ydl_opts = {
-        'format': 'best',
+        'format': 'best[height<=720]',  # 限制视频质量，避免文件太大
         'outtmpl': str(DOWNLOAD_DIR / '%(title)s.%(ext)s'),
         'progress_hooks': [progress_hook],
+        'quiet': True,
+        'no_warnings': True,
+        'no_check_certificates': True
     }
     
     try:
@@ -65,7 +74,6 @@ async def download_video(url, video_id):
     except Exception as e:
         download_tasks[video_id]["status"] = "error"
         download_tasks[video_id]["error"] = str(e)
-
 @app.get("/")
 async def home(request: Request):
     """首页"""
