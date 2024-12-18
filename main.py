@@ -86,7 +86,23 @@ async def home(request: Request):
         {"request": request, "videos": videos}
     )
 
+from fastapi import Body
+
 @app.post("/download")
+async def download(url: str = Body(..., embed=True)):
+    """开始下载视频"""
+    video_id = str(len(download_tasks))
+    info = get_video_info(url)
+    if "error" in info:
+        return JSONResponse({"error": info["error"]})
+    
+    # 启动异步下载任务
+    asyncio.create_task(download_video(url, video_id))
+    
+    return {
+        "video_id": video_id,
+        "info": info
+    }
 async def download(url: str):
     """开始下载视频"""
     video_id = str(len(download_tasks))
