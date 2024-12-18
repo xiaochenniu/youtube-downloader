@@ -25,6 +25,7 @@ download_tasks = {}
 
 def get_video_info(url):
     """获取视频信息"""
+    print(f"Attempting to get info for URL: {url}")  # 添加调试信息
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -33,15 +34,20 @@ def get_video_info(url):
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
+            print("Extracting video info...")  # 添加调试信息
             info = ydl.extract_info(url, download=False)
-            return {
-                "title": info["title"],
+            print(f"Raw info: {info}")  # 添加调试信息
+            result = {
+                "title": info.get("title", "Unknown Title"),
                 "duration": str(int(info.get("duration", 0) // 60)) + ":" + str(int(info.get("duration", 0) % 60)),
                 "author": info.get("uploader", "Unknown"),
-                "description": info.get("description", "")[:200] + "...",
+                "description": info.get("description", "No description")[:200] + "...",
                 "thumbnail": info.get("thumbnail", ""),
             }
+            print(f"Processed info: {result}")  # 添加调试信息
+            return result
         except Exception as e:
+            print(f"Error in get_video_info: {str(e)}")  # 添加调试信息
             return {"error": str(e)}
 
 async def download_video(url, video_id):
