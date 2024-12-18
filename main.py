@@ -17,7 +17,7 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/downloads", StaticFiles(directory="downloads"), name="downloads")
 
 # 视频保存目录
-DOWNLOAD_DIR = Path("downloads")
+DOWNLOAD_DIR = Path("/tmp/downloads")
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 # 存储下载任务状态
@@ -25,7 +25,7 @@ download_tasks = {}
 
 def get_video_info(url):
     """获取视频信息"""
-    print(f"Attempting to get info for URL: {url}")  # 添加调试信息
+    print(f"Attempting to get info for URL: {url}")
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -34,9 +34,9 @@ def get_video_info(url):
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            print("Extracting video info...")  # 添加调试信息
+            print("Extracting video info...")
             info = ydl.extract_info(url, download=False)
-            print(f"Raw info: {info}")  # 添加调试信息
+            print(f"Raw info: {info}")
             result = {
                 "title": info.get("title", "Unknown Title"),
                 "duration": str(int(info.get("duration", 0) // 60)) + ":" + str(int(info.get("duration", 0) % 60)),
@@ -44,10 +44,10 @@ def get_video_info(url):
                 "description": info.get("description", "No description")[:200] + "...",
                 "thumbnail": info.get("thumbnail", ""),
             }
-            print(f"Processed info: {result}")  # 添加调试信息
+            print(f"Processed info: {result}")
             return result
         except Exception as e:
-            print(f"Error in get_video_info: {str(e)}")  # 添加调试信息
+            print(f"Error in get_video_info: {str(e)}")
             return {"error": str(e)}
 
 async def download_video(url, video_id):
@@ -59,7 +59,7 @@ async def download_video(url, video_id):
             download_tasks[video_id]["progress"] = int(d.get('downloaded_bytes', 0) / d.get('total_bytes', 1) * 100)
     
     ydl_opts = {
-        'format': 'best[height<=720]',  # 限制视频质量，避免文件太大
+        'format': 'best[height<=720]',
         'outtmpl': str(DOWNLOAD_DIR / '%(title)s.%(ext)s'),
         'progress_hooks': [progress_hook],
         'quiet': True,
@@ -79,7 +79,6 @@ async def download_video(url, video_id):
 @app.get("/")
 async def home(request: Request):
     """首页"""
-    # 获取已下载视频列表
     videos = []
     for file in DOWNLOAD_DIR.glob("*"):
         if file.is_file():
@@ -96,7 +95,7 @@ async def home(request: Request):
         {"request": request, "videos": videos}
     )
 
-@app.post("/download")
+@app.post("/api/download")
 async def download(url: str = Body(..., embed=True)):
     """开始下载视频"""
     try:
@@ -126,7 +125,7 @@ async def download(url: str = Body(..., embed=True)):
         print("Error in download:", str(e))
         return JSONResponse({"error": str(e)})
 
-@app.get("/status/{video_id}")
+@app.get("/api/status/{video_id}")
 async def get_status(video_id: str):
     """获取下载状态"""
     if video_id in download_tasks:
