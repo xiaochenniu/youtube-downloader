@@ -64,66 +64,66 @@
 
     <script>
         async function downloadVideo() {
-    const urlInput = document.getElementById('url-input');
-    const downloadStatus = document.getElementById('download-status');
-    const statusText = document.getElementById('status-text');
-    const progressBar = document.getElementById('progress-bar');
-    const videoInfo = document.getElementById('video-info');
-    
-    downloadStatus.classList.remove('hidden');
-    
-    try {
-        // 开始下载
-        const response = await fetch('/download', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url: urlInput.value })
-        });
-        
-        const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        if (!data.info || !data.info.title) {
-            throw new Error('Invalid response from server');
-        }
-        
-        // 显示视频信息
-        document.getElementById('video-title').textContent = data.info.title;
-        document.getElementById('video-author').textContent = `By: ${data.info.author}`;
-        document.getElementById('video-duration').textContent = `Duration: ${data.info.duration}`;
-        document.getElementById('video-description').textContent = data.info.description || '';
-        videoInfo.classList.remove('hidden');
-        
-        // 轮询下载状态
-        const videoId = data.video_id;
-        const checkStatus = async () => {
-            const statusResponse = await fetch(`/status/${videoId}`);
-            const statusData = await statusResponse.json();
+            const urlInput = document.getElementById('url-input');
+            const downloadStatus = document.getElementById('download-status');
+            const statusText = document.getElementById('status-text');
+            const progressBar = document.getElementById('progress-bar');
+            const videoInfo = document.getElementById('video-info');
             
-            progressBar.style.width = `${statusData.progress}%`;
-            statusText.textContent = `Downloading: ${statusData.progress}%`;
+            downloadStatus.classList.remove('hidden');
             
-            if (statusData.status === 'completed') {
-                statusText.textContent = 'Download completed!';
-                setTimeout(() => location.reload(), 1000);
-            } else if (statusData.status === 'error') {
-                statusText.textContent = `Error: ${statusData.error}`;
-            } else {
-                setTimeout(checkStatus, 1000);
+            try {
+                // 开始下载
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: urlInput.value })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.info || !data.info.title) {
+                    throw new Error('Invalid response from server');
+                }
+                
+                // 显示视频信息
+                document.getElementById('video-title').textContent = data.info.title;
+                document.getElementById('video-author').textContent = `By: ${data.info.author}`;
+                document.getElementById('video-duration').textContent = `Duration: ${data.info.duration}`;
+                document.getElementById('video-description').textContent = data.info.description || '';
+                videoInfo.classList.remove('hidden');
+                
+                // 轮询下载状态
+                const videoId = data.video_id;
+                const checkStatus = async () => {
+                    const statusResponse = await fetch(`/status/${videoId}`);
+                    const statusData = await statusResponse.json();
+                    
+                    progressBar.style.width = `${statusData.progress}%`;
+                    statusText.textContent = `Downloading: ${statusData.progress}%`;
+                    
+                    if (statusData.status === 'completed') {
+                        statusText.textContent = 'Download completed!';
+                        setTimeout(() => location.reload(), 1000);
+                    } else if (statusData.status === 'error') {
+                        statusText.textContent = `Error: ${statusData.error}`;
+                    } else {
+                        setTimeout(checkStatus, 1000);
+                    }
+                };
+                
+                checkStatus();
+                
+            } catch (error) {
+                statusText.textContent = `Error: ${error.message}`;
+                console.error('Download error:', error);
             }
-        };
-        
-        checkStatus();
-        
-    } catch (error) {
-        statusText.textContent = `Error: ${error.message}`;
-        console.error('Download error:', error);
-    }
-}
+        }
     </script>
 </body>
 
