@@ -93,18 +93,32 @@ async def home(request: Request):
 @app.post("/download")
 async def download(url: str = Body(..., embed=True)):
     """开始下载视频"""
-    video_id = str(len(download_tasks))
-    info = get_video_info(url)
-    if "error" in info:
-        return JSONResponse({"error": info["error"]})
-    
-    # 启动异步下载任务
-    asyncio.create_task(download_video(url, video_id))
-    
-    return {
-        "video_id": video_id,
-        "info": info
-    }
+    try:
+        video_id = str(len(download_tasks))
+        info = get_video_info(url)
+        
+        print("Video info:", info)
+        
+        if "error" in info:
+            return JSONResponse({"error": info["error"]})
+        
+        response_data = {
+            "video_id": video_id,
+            "info": {
+                "title": info.get("title", "Unknown Title"),
+                "author": info.get("author", "Unknown Author"),
+                "duration": info.get("duration", "0:00"),
+                "description": info.get("description", "No description available")
+            }
+        }
+        
+        # 启动异步下载任务
+        asyncio.create_task(download_video(url, video_id))
+        
+        return response_data
+    except Exception as e:
+        print("Error in download:", str(e))
+        return JSONResponse({"error": str(e)})
 
 @app.get("/status/{video_id}")
 async def get_status(video_id: str):
