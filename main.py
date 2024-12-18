@@ -131,3 +131,14 @@ async def get_status(video_id: str):
     if video_id in download_tasks:
         return download_tasks[video_id]
     return {"status": "not_found"}
+@app.get("/debug")
+async def debug():
+    """调试端点"""
+    return {
+        "status": "ok",
+        "routes": [
+            {"path": "/", "method": "GET"},
+            {"path": "/api/download", "method": "POST"},
+            {"path": "/api/status/{video_id}", "method": "GET"}
+        ]
+    }
