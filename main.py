@@ -142,3 +142,6 @@ async def debug():
             {"path": "/api/status/{video_id}", "method": "GET"}
         ]
     }
+@app.get("/test")
+async def test():
+    return {"message": "API is working"}
